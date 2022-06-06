@@ -29,7 +29,7 @@ def standard_deviation(rtt, media):
     for i in range(0,num_pings): #ta indo de 0 a 9
         sum += (rtt[i] - media ) ** 2
     sd = sum/num_pings
-    sqrt(sd)
+    sd = sqrt(sd)
     return sd
 
 
@@ -68,14 +68,9 @@ rtt.sort()
 print('rtt max: {:03f}'   .format(rtt[num_pings - 1]) )
 print('rtt min: {:03f}'  .format(rtt[0]) )
 print('RTT medio: {:03f}' .format(rtt_medio(rtt)) )
-print('\n \n')
 
 sd = standard_deviation(rtt, media)
-# print('sd: {:03f}'  .format(sd))
-print('sd: {}'  .format(sd))
-
-
-
+print('sd: {:03f}'  .format(sd))
 
 #print('number of package lost: ' , package_lost)
 
