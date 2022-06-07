@@ -1,78 +1,123 @@
 from socket import *
-from math import sqrt
+import math
 import time
+#from string import slipt
 
 serverName = 'localhost'
 serverPort = 30000
 
 buffer_size = 10
-package_size = 30
+package_size = 40
+
 package_lost = 0
 package_sent = 0
 package_received = 0
+percent_lost = 0
+
 rtt = []
 num_pings = 10
-#Create a UDP socket
-# clientSocket = socket(AF_INET, SOCK_DGRAM) 
-# clientSocket.settimeout(1)  #tempo maximo de espera por uma resposta do server
+#dicionario chave index e content lista de tempo
 
-# msg_to_server = 'ping'
+#Create a UDP socket
+clientSocket = socket(AF_INET, SOCK_DGRAM) 
+clientSocket.settimeout(1)  #Maximum time of waiting
 
 def rtt_medio(rtt):
     list_sum = sum(rtt)
     media = list_sum / num_pings 
     return media
 
-#standard deviation
 def standard_deviation(rtt, media):
     sum = 0
-    for i in range(0,num_pings): #ta indo de 0 a 9
+    for i in range(0,num_pings): 
         sum += (rtt[i] - media ) ** 2
     sd = sum/num_pings
-    sd = sqrt(sd)
+    sd = math.sqrt(sd)
     return sd
+
+#Checking if the header is valid
+def valid_message(message):
+    str = message
+    print(str[0:5])  # num seq , 5 digitos , pega do 0 ao 4
+    print(str[5])  # 0  , 1 digito , pega o 5
+    print(str[6:10])  #pegar 4 digitos, pega do 6 ao 9
+    print(str[10:])  #pega do 10 ate o final
+    print('--------')
+    # if(len(str[0:5])== 5 and len(str[5]== 1) and len(str[6:10]==4) and len(str[10:] <= 30)) :
+    #     return True
+    # else:
+    #     return False
 
 
 for i in range(1,11):
-    clientSocket = socket(AF_INET, SOCK_DGRAM) 
-    clientSocket.settimeout(1.0)  #tempo maximo de espera por uma resposta do server
-    msg_to_server = 'ping'
+    starttime = time.time()
+    #Header parts
+    num_seq = str(i).zfill(5)  #Putting zeros to the left
+    timestamp = starttime * pow(10, 3)  #Converting to ms
+    timestamp_str = str(math.trunc(timestamp % 10000))  #Conferir se ta dando 4 digitos mesmo
+    #Header 
+    msg_to_server =  num_seq + '0' + timestamp_str + 'Elaine'
+    print(msg_to_server)
+    # str = msg_to_server.slipt()
+    valid_message(msg_to_server)
+    # print(str[0])
+    # print(str[1])
+    # print(str[2])
+    # print(str[3])
 
+ 
+  
     if(len(msg_to_server) > package_size):
         print('Invalid message!')
         exit(1)
 
     else:
-        #Important to count RTT
-        starttime = time.time()
         #Sending message to server
         clientSocket.sendto(msg_to_server .encode(),(serverName, serverPort))
+        package_sent += 1
         try:
             msg_from_server, serverAddress = clientSocket.recvfrom(buffer_size)
-            #Important to count RTT
+            #sliptar a mensagem e ver o index
             endtime = time.time()
-            print(msg_from_server.decode())
+            package_received += 1
+
+            #Checking if the header received from server is valid
+            # if(valid_message(msg_from_server.decode()) == False):
+            #     print('Invalid message!')
+            # else:
+            #     print(msg_from_server.decode())
+
             #RTT time
             rtt.append(endtime - starttime)
-            #print('RTT : ' , rtt[i-1])
-        #except clientSocket.Timeouterror:
+
         except timeout:
-            package_lost+= package_lost
+            package_lost += 1
             print('Unfortunately this package has been lost...')
 
 
-    clientSocket.close()
 
-media = rtt_medio(rtt)
+clientSocket.close()
+
+#Statistics
+media = rtt_medio(rtt) #avg
+sd = standard_deviation(rtt, media) #mdev
 rtt.sort()
-print('rtt max: {:03f}'   .format(rtt[num_pings - 1]) )
-print('rtt min: {:03f}'  .format(rtt[0]) )
-print('RTT medio: {:03f}' .format(rtt_medio(rtt)) )
+rtt_min = rtt[0]
+rtt_max= rtt[num_pings - 1]
+percent_lost = (package_lost / package_sent ) * 100
 
-sd = standard_deviation(rtt, media)
-print('sd: {:03f}'  .format(sd))
 
-#print('number of package lost: ' , package_lost)
+print('{} packets transmitted, {} received, {}% packet loss, time' 
+.format(package_sent, package_received, percent_lost) )
+
+print('rtt min/avg/max/mdev = {:03f}/{:03f}/{:03f}/{:03f}'
+ .format(rtt_min, media, rtt_max, sd))
+
+
+
+
+
+
 
 
 
