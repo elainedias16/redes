@@ -1,12 +1,13 @@
 from socket import *
 import math
 import time
-#from string import slipt
+
+start_exec = time.time()
 
 serverName = 'localhost'
 serverPort = 30000
 
-buffer_size = 10
+buffer_size = 40
 package_size = 40
 
 package_lost = 0
@@ -16,11 +17,11 @@ percent_lost = 0
 
 rtt = []
 num_pings = 10
-#dicionario chave index e content lista de tempo
+#dic_time = {}
 
 #Create a UDP socket
 clientSocket = socket(AF_INET, SOCK_DGRAM) 
-clientSocket.settimeout(1)  #Maximum time of waiting
+clientSocket.settimeout(2)  #Maximum time of waiting
 
 def rtt_medio(rtt):
     list_sum = sum(rtt)
@@ -35,19 +36,6 @@ def standard_deviation(rtt, media):
     sd = math.sqrt(sd)
     return sd
 
-#Checking if the header is valid
-def valid_message(message):
-    str = message
-    print(str[0:5])  # num seq , 5 digitos , pega do 0 ao 4
-    print(str[5])  # 0  , 1 digito , pega o 5
-    print(str[6:10])  #pegar 4 digitos, pega do 6 ao 9
-    print(str[10:])  #pega do 10 ate o final
-    print('--------')
-    # if(len(str[0:5])== 5 and len(str[5]== 1) and len(str[6:10]==4) and len(str[10:] <= 30)) :
-    #     return True
-    # else:
-    #     return False
-
 
 for i in range(1,11):
     starttime = time.time()
@@ -57,19 +45,14 @@ for i in range(1,11):
     timestamp_str = str(math.trunc(timestamp % 10000))  #Conferir se ta dando 4 digitos mesmo
     #Header 
     msg_to_server =  num_seq + '0' + timestamp_str + 'Elaine'
-    print(msg_to_server)
-    # str = msg_to_server.slipt()
-    valid_message(msg_to_server)
-    # print(str[0])
-    # print(str[1])
-    # print(str[2])
-    # print(str[3])
 
- 
+   
+    #dic_time[num_seq] =  [] #Every position of the dictionary will recevif two value, one of ping and another of pong
+    # dic_time[num_seq].append(starttime)
   
     if(len(msg_to_server) > package_size):
         print('Invalid message!')
-        exit(1)
+        continue
 
     else:
         #Sending message to server
@@ -77,15 +60,23 @@ for i in range(1,11):
         package_sent += 1
         try:
             msg_from_server, serverAddress = clientSocket.recvfrom(buffer_size)
-            #sliptar a mensagem e ver o index
+            msg_from_server = msg_from_server.decode()
             endtime = time.time()
             package_received += 1
 
+            #Checking if the pong is comming from the respective ping
+            # index(msg_from_server)
+            #index = msg_from_server[0:5]
+            # print(msg_from_server[0:5])
+            # if(index == num_seq):
+            #     dic_time[num_seq].append(endtime)
+                #print(dic_time[num_seq])
+            
             #Checking if the header received from server is valid
-            # if(valid_message(msg_from_server.decode()) == False):
-            #     print('Invalid message!')
-            # else:
-            #     print(msg_from_server.decode())
+            if(msg_from_server[5] == 0): #It's not in the protocol format
+                print('Invalid message!')
+            else:
+                print('Message from server: ' , msg_from_server)
 
             #RTT time
             rtt.append(endtime - starttime)
@@ -93,22 +84,27 @@ for i in range(1,11):
         except timeout:
             package_lost += 1
             print('Unfortunately this package has been lost...')
+            rtt.append(0)
+            
 
 
 
 clientSocket.close()
+end_exec = time.time()
 
 #Statistics
-media = rtt_medio(rtt) #avg
+media = rtt_medio(rtt)  * pow(10, 3) #Converting to ms  
 sd = standard_deviation(rtt, media) #mdev
 rtt.sort()
-rtt_min = rtt[0]
-rtt_max= rtt[num_pings - 1]
+rtt_min = rtt[0] * pow(10, 3) #Converting to ms
+rtt_max= rtt[num_pings - 1]  * pow(10, 3) #Converting to ms
 percent_lost = (package_lost / package_sent ) * 100
+time_exec = (end_exec - start_exec) * pow(10, 3) #Converting to ms
+time_exec = math.trunc(time_exec)
 
 
-print('{} packets transmitted, {} received, {}% packet loss, time' 
-.format(package_sent, package_received, percent_lost) )
+print('{} packets transmitted, {} received, {}% packet loss, time {}ms' 
+.format(package_sent, package_received, percent_lost, time_exec) )
 
 print('rtt min/avg/max/mdev = {:03f}/{:03f}/{:03f}/{:03f}'
  .format(rtt_min, media, rtt_max, sd))
