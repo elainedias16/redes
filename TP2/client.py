@@ -16,8 +16,9 @@ package_received = 0
 percent_lost = 0
 
 rtt = []
+# rtt2 = []
 num_pings = 10
-#dic_time = {}
+dic_time = {}
 
 #Create a UDP socket
 clientSocket = socket(AF_INET, SOCK_DGRAM) 
@@ -36,6 +37,17 @@ def standard_deviation(rtt, media):
     sd = math.sqrt(sd)
     return sd
 
+#calculo do rtt a partir do dicionario
+def rtt2(dic_time):
+    rtt2 = []
+    for num_seq in dic_time:
+        start = dic_time[num_seq][0]
+        print(start)
+        end = dic_time[num_seq][1]
+        print(end)
+        rtt2_value = end- start
+        rtt2.append(rtt2_value)
+    print(rtt2)
 
 for i in range(1,11):
     starttime = time.time()
@@ -47,8 +59,8 @@ for i in range(1,11):
     msg_to_server =  num_seq + '0' + timestamp_str + 'Elaine'
 
    
-    #dic_time[num_seq] =  [] #Every position of the dictionary will recevif two value, one of ping and another of pong
-    # dic_time[num_seq].append(starttime)
+    dic_time[num_seq] =  [] #Every position of the dictionary will recevif two value, one of ping and another of pong
+    dic_time[num_seq].append(starttime)
   
     if(len(msg_to_server) > package_size):
         print('Invalid message!')
@@ -64,19 +76,18 @@ for i in range(1,11):
             endtime = time.time()
             package_received += 1
 
-            #Checking if the pong is comming from the respective ping
-            # index(msg_from_server)
-            #index = msg_from_server[0:5]
-            # print(msg_from_server[0:5])
-            # if(index == num_seq):
-            #     dic_time[num_seq].append(endtime)
-                #print(dic_time[num_seq])
-            
             #Checking if the header received from server is valid
             if(msg_from_server[5] == 0): #It's not in the protocol format
                 print('Invalid message!')
             else:
                 print('Message from server: ' , msg_from_server)
+
+            #Checking if the pong is comming from the respective ping
+            index = msg_from_server[0:5]
+            if(index == num_seq):
+                dic_time[num_seq].append(endtime)
+
+              
 
             #RTT time
             rtt.append(endtime - starttime)
@@ -109,6 +120,10 @@ print('{} packets transmitted, {} received, {}% packet loss, time {}ms'
 print('rtt min/avg/max/mdev = {:03f}/{:03f}/{:03f}/{:03f}'
  .format(rtt_min, media, rtt_max, sd))
 
+
+print(dic_time) #ok
+print('--------')
+rtt2(dic_time)
 
 
 
