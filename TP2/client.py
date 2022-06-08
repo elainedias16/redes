@@ -1,3 +1,4 @@
+#Elaine Dias Pires
 from socket import *
 import math
 import time
@@ -30,29 +31,24 @@ clientSocket.settimeout(2)  #Maximum time of waiting
 
 def rtt_medio(rtt, size):
     rtt_sum = sum(rtt)
-    #media = rtt_sum / num_pings 
     media = rtt_sum / size
     return media
 
 def standard_deviation(rtt, media, size):
     sum = 0
-    for i in range(0,size): 
+    for i in range(0, size): 
         sum += (rtt[i] - media ) ** 2
-    #sd = sum/num_pings
     sd = sum/ size
     sd = math.sqrt(sd)
     return sd
 
-
 def rtt_calc(dic_time, rtt):
     for num_seq in dic_time:
-        #print(len(dic_time[num_seq]))
         if(len(dic_time[num_seq])==2): #if there is time of ping and pong
             start = dic_time[num_seq][0]
             end = dic_time[num_seq][1]
             rtt_value = end - start
             rtt.append(rtt_value)
-    #print(rtt2)
 
 
 for i in range(1,11):
@@ -60,7 +56,7 @@ for i in range(1,11):
     #Header parts
     num_seq = str(i).zfill(5)  #Putting zeros to the left
     timestamp = starttime * pow(10, 3)  #Converting to ms
-    timestamp_str = str(math.trunc(timestamp % 10000))  #Conferir se ta dando 4 digitos mesmo
+    timestamp_str = str(math.trunc(timestamp % 10000))  
     #Header 
     msg_to_server =  num_seq + '0' + timestamp_str + 'Elaine'
 
@@ -82,7 +78,9 @@ for i in range(1,11):
             package_received += 1
 
             #Checking if the header received from server is valid
-            if(msg_from_server[5] == 0): #It's not in the protocol format
+            index_int = int(msg_from_server[0:5])
+            m3= int(len(msg_from_server[6:10]))
+            if(msg_from_server[5] == 0 or index_int > 10 or len(msg_from_server[10:]) > 30 or m3 !=4): 
                 print('Invalid message!')
             else:
                 print('Message from server: ' , msg_from_server)
@@ -96,33 +94,33 @@ for i in range(1,11):
         except timeout:
             package_lost += 1
             print('Unfortunately this message has been lost...')
-            #rtt.append(0)
+           
             
-
-
 
 clientSocket.close()
 end_exec = time.time()
-rtt_calc(dic_time, rtt)
+rtt_calc(dic_time, rtt) #It will calculate rtt's times and put in rtt list
 size = len(rtt) #Not necessarily will be the number of pings, because some package maybe has been lost.
-print('size: ',  size)
 
-#Statistics
-media = rtt_medio(rtt, size)  * pow(10, 3) #Converting to ms  
-sd = standard_deviation(rtt, media, size) #mdev
-rtt.sort()
-rtt_min = rtt[0] * pow(10, 3) #Converting to ms
-rtt_max= rtt[size - 1]  * pow(10, 3) #Converting to ms
-percent_lost = (package_lost / package_sent ) * 100
-time_exec = (end_exec - start_exec) * pow(10, 3) #Converting to ms
-time_exec = math.trunc(time_exec)
+if(size > 0):
+    #Statistics
+    media = rtt_medio(rtt, size)  * pow(10, 3) #Converting to ms  
+    sd = standard_deviation(rtt, media, size) #mdev
+    rtt.sort()
 
+    rtt_min = rtt[0] * pow(10, 3) #Converting to ms
+    rtt_max= rtt[size - 1]  * pow(10, 3) #Converting to ms
+    percent_lost = (package_lost / package_sent ) * 100
+    time_exec = (end_exec - start_exec) * pow(10, 3) #Converting to ms
+    time_exec = math.trunc(time_exec)
 
-print('{} packets transmitted, {} received, {}% packet loss, time {}ms' 
-.format(package_sent, package_received, percent_lost, time_exec) )
+    print('{} packets transmitted, {} received, {}% packet loss, time {}ms' 
+    .format(package_sent, package_received, percent_lost, time_exec) )
 
-print('rtt min/avg/max/mdev = {:03f}/{:03f}/{:03f}/{:03f}'
- .format(rtt_min, media, rtt_max, sd))
+    print('rtt min/avg/max/mdev = {:03f}/{:03f}/{:03f}/{:03f}'
+    .format(rtt_min, media, rtt_max, sd))
+elif(size==0):
+    print("All pagkages has been lost, it's not possible to calculate statistics this way.")
 
 
 
